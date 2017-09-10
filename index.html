@@ -5,6 +5,19 @@
   <title>Toilet Princess</title>
 </head>
 <body>
+  <script>
+    const {ipcRenderer} = require('electron');
+    const updateBrowserStatus = () => {
+      ipcRenderer.send(
+        'browser-status-changed',
+        navigator.onLine ? 'online' : 'offline'
+      );
+    };
 
+    window.addEventListener('online', updateBrowserStatus);
+    window.addEventListener('offline', updateBrowserStatus); 
+
+    updateBrowserStatus();
+  </script>
 </body>
 </html>

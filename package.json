@@ -1,0 +1,34 @@
+{
+  "name": "toilet-princess",
+  "version": "1.0.0",
+  "description": "An electron app that listens to events published by multiple Particle Photons, each attached to a door sensor on a different restroom, to inform the user when a toilet is available or not.",
+  "main": "app.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sarahcodez/toilet-princess.git"
+  },
+  "keywords": [
+    "electron",
+    "particle",
+    "photon",
+    "toilet",
+    "sensor",
+    "EventSource",
+    "door",
+    "room",
+    "availability",
+    "toolbar"
+  ],
+  "author": "Sarah Graham",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sarahcodez/toilet-princess/issues"
+  },
+  "homepage": "https://github.com/sarahcodez/toilet-princess#readme",
+  "devDependencies": {
+    "electron": "^1.7.6"
+  }
+}

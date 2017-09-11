@@ -12,10 +12,6 @@ const localConfig = fs.existsSync(localConfigPath) ? require(localConfigPath) : 
 const {PHOTON_1, PHOTON_2, PARTICLE_ACCESS_TOKEN} = _.merge({}, defaultConfig, localConfig);
 const { app, BrowserWindow, ipcMain, Menu, Tray } = require('electron');
 
-console.log('photon_1', PHOTON_1);
-console.log('photon_2', PHOTON_2);
-console.log('particle_access_token', PARTICLE_ACCESS_TOKEN);
-
 let appWindow, tray;
 let browserState = 'Checking connection to Internet...';
 let devices = {
@@ -35,11 +31,7 @@ function createWindow() {
     appWindow = null;
   });
 
-  console.log('devices keys', Object.keys(devices));
-
   let openToilets = Object.values(devices).filter((device) => (device.online && device.open));
-
-  console.log('openToilets', openToilets);
 
   tray = new Tray(path.join(__dirname, '/images', '/poo-' + openToilets.length + '-icon.png')); // **
   createMenu();

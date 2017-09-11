@@ -1,6 +1,7 @@
 The MIT License (MIT)
 
 Copyright (c) 2014 Brent Ertz
+
 Copyright (c) 2017 Sarah Graham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of

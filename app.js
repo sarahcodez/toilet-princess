@@ -1,14 +1,27 @@
 // See (Electron): https://github.com/electron/electron-quick-start
 // See (Door sensor application): https://github.com/brentertz/ocupado-app 
-
-const { app, BrowserWindow, ipcMain, Menu, Tray } = require('electron');
-
 const path = require('path');
 const url = require('url');
+const fs = require('fs');
+const _ = require('lodash');
+
+const defaultConfig = require('./config/defaults');
+const localConfigPath = path.join(__dirname, '/config', 'local.js');
+const localConfig = fs.existsSync(localConfigPath) ? require(localConfigPath) : {};
+
+const {PHOTON_1, PHOTON_2, PARTICLE_ACCESS_TOKEN} = _.merge({}, defaultConfig, localConfig);
+const { app, BrowserWindow, ipcMain, Menu, Tray } = require('electron');
+
+console.log('photon_1', PHOTON_1);
+console.log('photon_2', PHOTON_2);
+console.log('particle_access_token', PARTICLE_ACCESS_TOKEN);
 
 let appWindow, tray;
 let browserState = 'Checking connection to Internet...';
-let devices = [];
+let devices = {
+  [PHOTON_1]: {name: 'Toilet 1', online: false, open: false, eventSource: null},
+  [PHOTON_2]: {name: 'Toilet 2', online: false, open: false, eventSource: null}
+};
 
 function createWindow() {
   appWindow = new BrowserWindow({ width: 0, height: 0, show: false });
@@ -22,7 +35,13 @@ function createWindow() {
     appWindow = null;
   });
 
-  tray = new Tray(path.join(__dirname, '/images', '/poo-' + devices.length + '-icon.png'));
+  console.log('devices keys', Object.keys(devices));
+
+  let openToilets = Object.values(devices).filter((device) => (device.online && device.open));
+
+  console.log('openToilets', openToilets);
+
+  tray = new Tray(path.join(__dirname, '/images', '/poo-' + openToilets.length + '-icon.png')); // **
   createMenu();
 }
 

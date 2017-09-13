@@ -4,12 +4,16 @@ const path = require('path');
 const url = require('url');
 const fs = require('fs');
 const _ = require('lodash');
+const EventSource = require('eventsource');
+const request = require('request');
 
 const defaultConfig = require('./config/defaults');
 const localConfigPath = path.join(__dirname, '/config', 'local.js');
 const localConfig = fs.existsSync(localConfigPath) ? require(localConfigPath) : {};
 
-const {PHOTON_1, PHOTON_2, PARTICLE_ACCESS_TOKEN} = _.merge({}, defaultConfig, localConfig);
+const { PHOTON_1, PHOTON_2, PARTICLE_ACCESS_TOKEN, PARTICLE_BASE_URL } = _.merge(
+  {}, defaultConfig, localConfig
+);
 const { app, BrowserWindow, ipcMain, Menu, Tray } = require('electron');
 
 let appWindow, tray;
@@ -31,10 +35,14 @@ function createWindow() {
     appWindow = null;
   });
 
-  let openToilets = Object.values(devices).filter((device) => (device.online && device.open));
+  let openToilets = getOpenToilets();
 
-  tray = new Tray(path.join(__dirname, '/images', '/poo-' + openToilets.length + '-icon.png')); // **
+  tray = new Tray(path.join(__dirname, '/images', '/poo-' + openToilets.length + '-icon.png'));
   createMenu();
+}
+
+function getOpenToilets() {
+  return Object.values(devices).filter((device) => (device.online && device.open));
 }
 
 function createMenu() {
@@ -48,6 +56,86 @@ function createMenu() {
   tray.setToolTip('Toilet Princess');
   tray.setHighlightMode('never');
   tray.setContextMenu(contextMenu);
+}
+
+function connect() {
+  for (let deviceId in devices) {
+    const eventsUrl = PARTICLE_BASE_URL + '/v1/devices/' + deviceId +
+      '/events?access_token=' + PARTICLE_ACCESS_TOKEN;
+    let eventSource = devices[deviceId].eventSource;
+
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+    }
+
+    eventSource = new EventSource(eventsUrl);
+
+    eventSource.onopen = function() {
+      devices[deviceId].online = true;
+      getCurrentState(deviceId);
+    };
+
+    eventSource.onerror = function() {
+      console.log('Error communicating with Photon');
+      devices[deviceId].online = false;
+      updateTray();
+
+      if (eventSource.readyState === EventSource.CLOSED) {
+        console.log('Attempting to reconnect in 3 seconds');
+        setTimeout(reconnect, 3000);
+      }
+    };
+
+    eventSource.addEventListener(
+      'doorMessage',
+      function(event) {
+        const data = JSON.parse(event.data);
+        const deviceId = data.coreid;
+
+        if (devices.hasOwnProperty(deviceId)) {
+          devices[deviceId].open = data.data === 'open';
+        }
+        updateTray();
+      }.bind(this),
+      false
+    );
+  }
+}
+
+function getCurrentState(deviceId) {
+  const doorStateUrl = PARTICLE_BASE_URL + '/v1/devices/' + deviceId +
+    '/doorMessage?access_token=' + PARTICLE_ACCESS_TOKEN;
+
+  request(
+    doorStateUrl,
+    function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        const data = JSON.parse(body);
+        const deviceId = data.coreInfo.deviceID;
+
+        if (devices.hasOwnProperty(deviceId)) {
+          devices[deviceId].open = data.result === 'open';
+        }
+        updateTray();
+      }
+    }.bind(this)
+  );
+}
+
+function updateTray() {
+  let openToilets = getOpenToilets();
+
+  tray.setImage(path.join(__dirname, '/images', '/poo-' + openToilets.length + '-icon.png'));
+  createMenu();
+}
+
+function reconnect() {
+
+}
+
+function disconnect() {
+
 }
 
 app.on('ready', createWindow);
@@ -71,7 +159,9 @@ app.on('activate', function () {
 ipcMain.on('browser-status-changed', (event, status) => {
   if (status === 'online') {
     browserState = 'Online';
+    connect();
   } else {
     browserState = 'Offline';
+    disconnect();
   }
 });

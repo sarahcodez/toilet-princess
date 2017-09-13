@@ -72,6 +72,7 @@ function connect() {
     eventSource.onerror = function() {
       console.log('Error communicating with Photon');
       devices[deviceId].online = false;
+      devices[deviceId].open = false;
       updateTray();
 
       if (eventSource.readyState === EventSource.CLOSED) {
@@ -134,7 +135,16 @@ function reconnect() {
 }
 
 function disconnect() {
+  for (let deviceId in devices) {
 
+    if (devices[deviceId].eventSource) {
+      devices[deviceId].eventSource.close();
+      devices[deviceId].eventSource = null;
+    }
+    devices[deviceId].online = false;
+    devices[deviceId].open = false;
+  }
+  updateTray();
 }
 
 app.on('ready', createWindow);

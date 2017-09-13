@@ -62,14 +62,7 @@ function connect() {
   for (let deviceId in devices) {
     const eventsUrl = PARTICLE_BASE_URL + '/v1/devices/' + deviceId +
       '/events?access_token=' + PARTICLE_ACCESS_TOKEN;
-    let eventSource = devices[deviceId].eventSource;
-
-    if (eventSource) {
-      eventSource.close();
-      eventSource = null;
-    }
-
-    eventSource = new EventSource(eventsUrl);
+    const eventSource = new EventSource(eventsUrl);
 
     eventSource.onopen = function() {
       devices[deviceId].online = true;
@@ -100,6 +93,12 @@ function connect() {
       }.bind(this),
       false
     );
+
+    if (devices[deviceId].eventSource) {
+      devices[deviceId].eventSource.close();
+      devices[deviceId].eventSource = null;
+    }
+    devices[deviceId].eventSource = eventSource;
   }
 }
 

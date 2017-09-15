@@ -58,8 +58,10 @@ function createMenu() {
   tray.setContextMenu(contextMenu);
 }
 
-function connect() {
-  for (let deviceId in devices) {
+function connect(deviceId) {
+  const deviceIds = deviceId ? [deviceId] : Object.keys(devices);
+
+  for (let deviceId of deviceIds) {
     const eventsUrl = PARTICLE_BASE_URL + '/v1/devices/' + deviceId +
       '/events?access_token=' + PARTICLE_ACCESS_TOKEN;
     const eventSource = new EventSource(eventsUrl);
@@ -77,7 +79,7 @@ function connect() {
 
       if (eventSource.readyState === EventSource.CLOSED) {
         console.log('Attempting to reconnect in 3 seconds');
-        setTimeout(reconnect, 3000);
+        setTimeout(() => { reconnect(deviceId) }, 3000);
       }
     };
 
@@ -149,8 +151,10 @@ function updateTray() {
   createMenu();
 }
 
-function reconnect() {
-
+function reconnect(deviceId) {
+  if (devices[deviceId].eventSource.readyState === EventSource.CLOSED) {
+    connect(deviceId);
+  }
 }
 
 function disconnect() {

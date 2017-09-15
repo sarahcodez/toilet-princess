@@ -95,6 +95,25 @@ function connect() {
       false
     );
 
+    eventSource.addEventListener(
+      // Triggered when photon is connected to a power source or (eventually) after it is disconnected
+      'spark/status',
+      function(event) {
+        const data = JSON.parse(event.data);
+        const deviceId = data.coreid;
+        const deviceStatus = data.data;
+
+        devices[deviceId].online = deviceStatus === 'online';
+
+        if (deviceStatus === 'online') {
+          getCurrentState(deviceId);
+        } else {
+          updateTray();
+        }
+      }.bind(this),
+      false
+    );
+
     if (devices[deviceId].eventSource) {
       devices[deviceId].eventSource.close();
       devices[deviceId].eventSource = null;

@@ -11,7 +11,7 @@ const defaultConfig = require('./config/defaults');
 const localConfigPath = path.join(__dirname, '/config', 'local.js');
 const localConfig = fs.existsSync(localConfigPath) ? require(localConfigPath) : {};
 
-const { PHOTON_1, PHOTON_2, PARTICLE_ACCESS_TOKEN, PARTICLE_BASE_URL } = _.merge(
+const { PHOTON_1, PHOTON_2, PHOTON_3, PHOTON_4, PARTICLE_ACCESS_TOKEN, PARTICLE_BASE_URL } = _.merge(
   {}, defaultConfig, localConfig
 );
 const { app, BrowserWindow, ipcMain, Menu, Tray } = require('electron');
@@ -20,7 +20,9 @@ let appWindow, tray;
 let browserState = 'Checking connection to Internet...';
 let devices = {
   [PHOTON_1]: {name: 'Toilet 1', online: false, open: false, eventSource: null},
-  [PHOTON_2]: {name: 'Toilet 2', online: false, open: false, eventSource: null}
+  [PHOTON_2]: {name: 'Toilet 2', online: false, open: false, eventSource: null},
+  [PHOTON_3]: {name: 'Toilet 3', online: false, open: false, eventSource: null},
+  [PHOTON_4]: {name: 'Toilet 4', online: false, open: false, eventSource: null},
 };
 
 function createWindow() {

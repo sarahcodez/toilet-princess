@@ -39,7 +39,7 @@ function createWindow() {
 
   let openToilets = getOpenToilets();
 
-  tray = new Tray(path.join(__dirname, '/images', '/poo-' + openToilets.length + '-icon.png'));
+  tray = new Tray(path.join(__dirname, '/images', '/toilet-0-icon.png'));
   createMenu();
 }
 
@@ -149,7 +149,7 @@ function getCurrentState(deviceId) {
 function updateTray() {
   let openToilets = getOpenToilets();
 
-  tray.setImage(path.join(__dirname, '/images', '/poo-' + openToilets.length + '-icon.png'));
+  tray.setImage(path.join(__dirname, '/images', '/toilet-' + openToilets.length + '-icon.png'));
   createMenu();
 }
 

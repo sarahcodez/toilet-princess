@@ -100,7 +100,6 @@ function connect(deviceId) {
     const eventSource = new EventSource(eventsUrl);
 
     eventSource.onopen = function() {
-      devices[deviceId].online = true;
       getCurrentState(deviceId);
     };
 

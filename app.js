@@ -39,8 +39,7 @@ function createWindow() {
 
   let openToilets = getOpenToilets();
 
-  appTray = new Tray(path.join(__dirname, '/images',
-    '/toilet-' + openToilets.length + '-icon.png'));
+  appTray = new Tray(path.join(__dirname, '/images', '/toilet-0-icon.png'));
   createMenu();
 }
 

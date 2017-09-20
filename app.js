@@ -16,13 +16,13 @@ const { PHOTON_1, PHOTON_2, PHOTON_3, PHOTON_4, PARTICLE_ACCESS_TOKEN, PARTICLE_
 );
 const { app, BrowserWindow, ipcMain, Menu, Tray } = require('electron');
 
-let appWindow, tray;
+let appWindow, appTray;
 let browserState = 'Checking connection to Internet...';
 let devices = {
-  [PHOTON_1]: {name: 'Toilet 1', online: false, open: false, eventSource: null},
-  [PHOTON_2]: {name: 'Toilet 2', online: false, open: false, eventSource: null},
-  [PHOTON_3]: {name: 'Toilet 3', online: false, open: false, eventSource: null},
-  [PHOTON_4]: {name: 'Toilet 4', online: false, open: false, eventSource: null},
+  [PHOTON_1]: {name: 'Toilet 1   ', online: false, open: false, eventSource: null},
+  [PHOTON_2]: {name: 'Toilet 2   ', online: false, open: false, eventSource: null},
+  [PHOTON_3]: {name: 'Toilet 3   ', online: false, open: false, eventSource: null},
+  [PHOTON_4]: {name: 'Toilet 4   ', online: false, open: false, eventSource: null},
 };
 
 function createWindow() {
@@ -39,7 +39,8 @@ function createWindow() {
 
   let openToilets = getOpenToilets();
 
-  tray = new Tray(path.join(__dirname, '/images', '/toilet-0-icon.png'));
+  appTray = new Tray(path.join(__dirname, '/images',
+    '/toilet-' + openToilets.length + '-icon.png'));
   createMenu();
 }
 
@@ -48,16 +49,47 @@ function getOpenToilets() {
 }
 
 function createMenu() {
-  const template = [
-    { label: browserState, enabled: false },
-    { type: 'separator' },
-    { label: 'Quit', click: app.quit }
-  ];
+  const browserStateItem = { label: browserState, enabled: false };
+  const quitItem = { label: 'Quit', click: app.quit };
+  const separatorItem = { type: 'separator' };
+  let template = [];
+
+  template.push(browserStateItem, separatorItem);
+
+  for (deviceId in devices) {
+    const device = devices[deviceId];
+
+    let deviceItem = {
+      label: device.name,
+      type: 'normal',
+      icon: getDeviceIcon(deviceId)
+    };
+
+    template.push(deviceItem);
+  }
+
+  template.push(separatorItem, quitItem);
+
   const contextMenu = Menu.buildFromTemplate(template);
 
-  tray.setToolTip('Toilet Princess');
-  tray.setHighlightMode('never');
-  tray.setContextMenu(contextMenu);
+  appTray.setToolTip('Toilet Princess');
+  appTray.setHighlightMode('never');
+  appTray.setContextMenu(contextMenu);
+}
+
+function getDeviceIcon(deviceId) {
+  let icon = 'disconnected';
+
+  if (devices.hasOwnProperty(deviceId)) {
+    const device = devices[deviceId];
+
+    if (device.online) {
+      icon = device.open ? 'open' : 'closed';
+    }
+  }
+
+  return path.join(__dirname, '/images',
+    icon + '-icon.png'); 
 }
 
 function connect(deviceId) {
@@ -149,7 +181,7 @@ function getCurrentState(deviceId) {
 function updateTray() {
   let openToilets = getOpenToilets();
 
-  tray.setImage(path.join(__dirname, '/images', '/toilet-' + openToilets.length + '-icon.png'));
+  appTray.setImage(path.join(__dirname, '/images', '/toilet-' + openToilets.length + '-icon.png'));
   createMenu();
 }
 

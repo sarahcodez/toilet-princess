@@ -78,7 +78,7 @@ function createMenu() {
 function getDeviceIcon(deviceId) {
   let icon = 'disconnected';
 
-  if (devices.hasOwnProperty(deviceId)) {
+  if (deviceId && devices.hasOwnProperty(deviceId)) {
     const device = devices[deviceId];
 
     if (device.online) {
@@ -153,7 +153,7 @@ function connect(deviceId) {
 }
 
 function getCurrentState(deviceId) {
-  if (!devices.hasOwnProperty(deviceId)) {
+  if (!deviceId || !devices.hasOwnProperty(deviceId)) {
     return;
   }
 
@@ -184,7 +184,7 @@ function updateTray() {
 }
 
 function reconnect(deviceId) {
-  if (devices.hasOwnProperty(deviceId) &&
+  if (deviceId && devices.hasOwnProperty(deviceId) &&
       devices[deviceId].eventSource.readyState === EventSource.CLOSED) {
     connect(deviceId);
   }

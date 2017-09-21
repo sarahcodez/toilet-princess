@@ -1,5 +1,6 @@
 // See (Electron): https://github.com/electron/electron-quick-start
-// See (Door sensor application): https://github.com/brentertz/ocupado-app 
+// See (Door sensor application): https://github.com/brentertz/ocupado-app
+const { app, BrowserWindow, ipcMain, Menu, Tray } = require('electron');
 const path = require('path');
 const url = require('url');
 const fs = require('fs');
@@ -10,11 +11,9 @@ const request = require('request');
 const defaultConfig = require('./config/defaults');
 const localConfigPath = path.join(__dirname, '/config', 'local.js');
 const localConfig = fs.existsSync(localConfigPath) ? require(localConfigPath) : {};
-
-const { PHOTON_1, PHOTON_2, PHOTON_3, PHOTON_4, PARTICLE_ACCESS_TOKEN, PARTICLE_BASE_URL } = _.merge(
-  {}, defaultConfig, localConfig
-);
-const { app, BrowserWindow, ipcMain, Menu, Tray } = require('electron');
+const { 
+  PHOTON_1, PHOTON_2, PHOTON_3, PHOTON_4, PARTICLE_ACCESS_TOKEN, PARTICLE_BASE_URL
+} = _.merge({}, defaultConfig, localConfig);
 
 let appWindow, appTray;
 let browserState = 'Checking connection to Internet...';
@@ -87,12 +86,12 @@ function getDeviceIcon(deviceId) {
     }
   }
 
-  return path.join(__dirname, '/images',
-    icon + '-icon.png'); 
+  return path.join(__dirname, '/images', icon + '-icon.png');
 }
 
 function connect(deviceId) {
-  const deviceIds = deviceId ? [deviceId] : Object.keys(devices);
+  const deviceIds = !deviceId ? Object.keys(devices) :
+    (devices.hasOwnProperty(deviceId) ? [deviceId] : []);
 
   for (let deviceId of deviceIds) {
     const eventsUrl = PARTICLE_BASE_URL + '/v1/devices/' + deviceId +
@@ -104,13 +103,14 @@ function connect(deviceId) {
     };
 
     eventSource.onerror = function() {
-      console.log('Error communicating with Photon');
+      console.error('Error communicating with Photon for ' + devices[deviceId].name);
       devices[deviceId].online = false;
       devices[deviceId].open = false;
       updateTray();
 
       if (eventSource.readyState === EventSource.CLOSED) {
-        console.log('Attempting to reconnect in 3 seconds');
+        console.log('Attempting to reconnect with Photon for ' +
+          devices[deviceId].name + ' in 3 seconds');
         setTimeout(() => { reconnect(deviceId) }, 3000);
       }
     };
@@ -119,11 +119,8 @@ function connect(deviceId) {
       'doorMessage',
       function(event) {
         const data = JSON.parse(event.data);
-        const deviceId = data.coreid;
 
-        if (devices.hasOwnProperty(deviceId)) {
-          devices[deviceId].open = data.data === 'open';
-        }
+        devices[deviceId].open = data.data === 'open';
         updateTray();
       }.bind(this),
       false
@@ -134,7 +131,6 @@ function connect(deviceId) {
       'spark/status',
       function(event) {
         const data = JSON.parse(event.data);
-        const deviceId = data.coreid;
         const deviceStatus = data.data;
 
         devices[deviceId].online = deviceStatus === 'online';
@@ -157,6 +153,10 @@ function connect(deviceId) {
 }
 
 function getCurrentState(deviceId) {
+  if (!devices.hasOwnProperty(deviceId)) {
+    return;
+  }
+
   const doorStateUrl = PARTICLE_BASE_URL + '/v1/devices/' + deviceId +
     '/doorMessage?access_token=' + PARTICLE_ACCESS_TOKEN;
 
@@ -165,12 +165,12 @@ function getCurrentState(deviceId) {
     function(error, response, body) {
       if (!error && response.statusCode === 200) {
         const data = JSON.parse(body);
-        const deviceId = data.coreInfo.deviceID;
 
-        if (devices.hasOwnProperty(deviceId)) {
-          devices[deviceId].open = data.result === 'open';
-        }
+        devices[deviceId].open = data.result === 'open';
+        devices[deviceId].online = true;
         updateTray();
+      } else if (error) {
+        console.error('Error checking door state for ' + devices[deviceId].name, body);
       }
     }.bind(this)
   );
@@ -184,7 +184,8 @@ function updateTray() {
 }
 
 function reconnect(deviceId) {
-  if (devices[deviceId].eventSource.readyState === EventSource.CLOSED) {
+  if (devices.hasOwnProperty(deviceId) &&
+      devices[deviceId].eventSource.readyState === EventSource.CLOSED) {
     connect(deviceId);
   }
 }
